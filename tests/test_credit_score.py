@@ -3,6 +3,7 @@ from app.main import app
 
 client = TestClient(app)
 
+
 def test_get_credit_score():
     response = client.post("/score", json={
         "income": 50000,
