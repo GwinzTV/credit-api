@@ -1,12 +1,13 @@
 import joblib
 from pathlib import Path
-from app.schemas import CreditRequest
 import pandas as pd
+import shap
+import numpy as np
+from app.schemas import CreditRequest
 
 model_path = Path(__file__).resolve().parents[1] / "credit_score_model.joblib"
-model = joblib.load(model_path)
+pipeline = joblib.load(model_path)
 
-# Match training feature names exactly
 FEATURE_NAMES = [
     "status_of_account", "duration_in_months", "credit_history", "purpose",
     "credit_amount", "savings_account_bonds", "present_employment", "installment_rate",
@@ -17,11 +18,40 @@ FEATURE_NAMES = [
 
 
 def predict_credit_score(data: CreditRequest):
+    # Prepare input as a DataFrame with column names
     input_dict = {name: getattr(data, name) for name in FEATURE_NAMES}
-    input_df = pd.DataFrame([input_dict])  # ✅ preserves column names
-    prob_good = model.predict_proba(input_df)[0][1]
+    input_df = pd.DataFrame([input_dict])
+
+    # Predict probability of "good" credit
+    prob_good = pipeline.predict_proba(input_df)[0][1]
     score = prob_good * 100
-    reasons = ["Probability-based credit risk from real data"]
+
+    # SHAP explainability
+    scaler = pipeline.named_steps["scaler"]
+    model = pipeline.named_steps["model"]
+    input_scaled = scaler.transform(input_df)
+
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(input_scaled)
+
+    # Safely extract SHAP values
+    if isinstance(shap_values, list) or isinstance(shap_values, tuple):
+        shap_array = shap_values[0][0]  # first class, first sample
+    else:
+        shap_array = shap_values[0]  # first sample
+
+    # Ensure it's a 1D array
+    shap_array = np.array(shap_array).flatten()
+
+    # Get top 3 influencing features by absolute impact
+    influences = sorted(
+        zip(FEATURE_NAMES, shap_array),
+        key=lambda x: abs(x[1]),
+        reverse=True
+    )[:3]
+
+    reasons = [f"{name} → {round(value, 3)} impact" for name, value in influences]
+
     return round(score, 2), reasons
 
 
