@@ -11,13 +11,28 @@ const fields = [
 export default function CreditScoringForm() {
   const [formData, setFormData] = useState(Object.fromEntries(fields.map(f => [f, ""])));
   const [result, setResult] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: "" });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    let newErrors = {};
+    for (const [key, val] of Object.entries(formData)) {
+      if (val === "" || isNaN(val) || Number(val) < 0) {
+        newErrors[key] = "Please enter a valid number ≥ 0";
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     const payload = Object.fromEntries(
       Object.entries(formData).map(([key, val]) => [key, parseFloat(val)])
     );
@@ -55,6 +70,9 @@ export default function CreditScoringForm() {
                 required
                 className="p-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              {errors[field] && (
+                <p className="text-sm text-red-500 mt-1">{errors[field]}</p>
+              )}
             </div>
           ))}
           <div className="col-span-full text-center mt-4">
