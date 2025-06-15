@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import shap
 import numpy as np
-from app.schemas import CreditRequest
+from .schemas import CreditRequest
 
 model_path = Path(__file__).resolve().parents[1] / "credit_score_model.joblib"
 pipeline = joblib.load(model_path)

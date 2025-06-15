@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from app.schemas import CreditRequest, CreditResponse
-from app.ml_model import predict_credit_score, risk_band
+from .schemas import CreditRequest, CreditResponse
+from .ml_model import predict_credit_score, risk_band
 
 router = APIRouter()
 
