@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: credit-score-fullstack
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 10000
