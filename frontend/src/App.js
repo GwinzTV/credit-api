@@ -73,7 +73,7 @@ function App() {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/score', {
+      const response = await fetch('/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(numericData)
