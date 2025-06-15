@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import './App.css';
 
-
 const FEATURE_LABELS = {
   status_of_account: "Status of Account",
   duration_in_months: "Duration (Months)",
@@ -26,77 +25,63 @@ const FEATURE_LABELS = {
   foreign_worker: "Foreign Worker"
 };
 
-
 function App() {
-  const [formData, setFormData] = useState({
-    status_of_account: '',
-    duration_in_months: '',
-    credit_history: '',
-    purpose: '',
-    credit_amount: '',
-    savings_account_bonds: '',
-    present_employment: '',
-    installment_rate: '',
-    personal_status: '',
-    other_debtors: '',
-    residence_since: '',
-    property: '',
-    age: '',
-    other_installment_plans: '',
-    housing: '',
-    existing_credits: '',
-    job: '',
-    number_dependents: '',
-    own_telephone: '',
-    foreign_worker: ''
-  });
-
-
+  const [formData, setFormData] = useState(
+    Object.keys(FEATURE_LABELS).reduce((acc, key) => ({ ...acc, [key]: '' }), {})
+  );
+  const [errors, setErrors] = useState({});
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
 
+    // Allow only integer values
+    if (/[^0-9]/.test(value)) return;
+
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setErrors(prev => ({ ...prev, [name]: "" }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    const newErrors = {};
+    const numericData = {};
+
+    for (const [key, value] of Object.entries(formData)) {
+      const num = parseInt(value, 10);
+
+      if (value === "") {
+        newErrors[key] = "This field is required.";
+      } else if (isNaN(num)) {
+        newErrors[key] = "Must be an integer.";
+      } else if (num < 0) {
+        newErrors[key] = "Must be 0 or greater.";
+      } else {
+        numericData[key] = num;
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Convert all values to numbers
-      const numericData = {};
-      for (const [key, value] of Object.entries(formData)) {
-        const numValue = parseFloat(value);
-        if (isNaN(numValue)) {
-          throw new Error(`Invalid numeric value for ${FEATURE_LABELS[key]}`);
-        }
-        numericData[key] = numValue;
-      }
-
-
       const response = await fetch('http://localhost:8000/score', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(numericData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(numericData)
       });
-
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
 
       const data = await response.json();
       setResult(data);
@@ -107,7 +92,6 @@ function App() {
     }
   };
 
-
   const getRiskBandColor = (riskBand) => {
     switch (riskBand?.toLowerCase()) {
       case 'low': return '#28a745';
@@ -117,7 +101,6 @@ function App() {
     }
   };
 
-
   const clearForm = () => {
     setFormData(Object.keys(formData).reduce((acc, key) => {
       acc[key] = '';
@@ -125,8 +108,8 @@ function App() {
     }, {}));
     setResult(null);
     setError(null);
+    setErrors({});
   };
-
 
   return (
     <div className="App">
@@ -136,7 +119,6 @@ function App() {
           <p>Enter the credit features below to get a risk assessment</p>
         </header>
 
-
         <div className="main-content">
           <form onSubmit={handleSubmit} className="credit-form">
             <div className="form-grid">
@@ -144,19 +126,19 @@ function App() {
                 <div key={key} className="form-group">
                   <label htmlFor={key}>{label}</label>
                   <input
-                    type="number"
+                    type="text"
                     id={key}
                     name={key}
                     value={formData[key]}
                     onChange={handleInputChange}
-                    step="any"
                     required
-                    placeholder="Enter numeric value"
+                    placeholder="Enter integer value"
+                    className={errors[key] ? 'input-error' : ''}
                   />
+                  {errors[key] && <p className="error-text">{errors[key]}</p>}
                 </div>
               ))}
             </div>
-
 
             <div className="form-actions">
               <button type="submit" disabled={loading} className="submit-btn">
@@ -168,7 +150,6 @@ function App() {
             </div>
           </form>
 
-
           {error && (
             <div className="error-message">
               <h3>Error</h3>
@@ -176,23 +157,21 @@ function App() {
             </div>
           )}
 
-
           {result && (
             <div className="results">
               <h2>Credit Assessment Results</h2>
-              
+
               <div className="score-display">
                 <div className="score-circle">
                   <span className="score-value">{result.score}</span>
                   <span className="score-label">Credit Score</span>
                 </div>
-                
+
                 <div className="risk-band" style={{ backgroundColor: getRiskBandColor(result.risk_band) }}>
                   <span className="risk-label">Risk Band</span>
                   <span className="risk-value">{result.risk_band}</span>
                 </div>
               </div>
-
 
               <div className="explanations">
                 <h3>Top Influencing Factors</h3>
@@ -212,6 +191,5 @@ function App() {
     </div>
   );
 }
-
 
 export default App;
