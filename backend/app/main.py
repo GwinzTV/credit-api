@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app import routes
+from . import routes
 from fastapi.middleware.cors import CORSMiddleware
 
 
