@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from . import routes
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 
 app = FastAPI(title="AI-Powered Credit Scoring API")
@@ -14,3 +16,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+frontend_path = Path(__file__).resolve().parents[2] / "frontend" / "build"
+app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")

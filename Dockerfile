@@ -7,11 +7,10 @@ COPY backend/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Base image for frontend build
+# frontend build step
 FROM node:18 AS frontend
-
 WORKDIR /frontend
-COPY frontend/ ./
+COPY frontend/ .
 RUN npm install && npm run build
 
 # Final stage: serve both
@@ -19,7 +18,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 COPY --from=backend /app /app
-COPY --from=frontend /frontend/build /app/frontend-build
+COPY --from=frontend /frontend/build /app/frontend/build
 
 RUN pip install --no-cache-dir -r backend/requirements.txt
 
